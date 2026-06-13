@@ -19,7 +19,7 @@ function ChatContainer() {
   const messageEndRef = useRef(null);
 
   useEffect(() => {
-    getMessagesByUserId(selectedUser._id);
+    getMessagesByUserId(selectedUser.id);
     subscribeToMessages();
 
     // clean up
@@ -40,12 +40,12 @@ function ChatContainer() {
           <div className="max-w-3xl mx-auto space-y-6">
             {messages.map((msg) => (
               <div
-                key={msg._id}
-                className={`chat ${msg.senderId === authUser._id ? "chat-end" : "chat-start"}`}
+                key={msg.id}
+                className={`chat ${msg.senderId === authUser.id ? "chat-end" : "chat-start"}`}
               >
                 <div
                   className={`chat-bubble relative ${
-                    msg.senderId === authUser._id
+                    msg.senderId === authUser.id
                       ? "bg-cyan-600 text-white"
                       : "bg-slate-800 text-slate-200"
                   }`}
