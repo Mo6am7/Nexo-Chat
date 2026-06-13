@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import { prisma } from "../lib/db.js";
 import { ENV } from "../lib/env.js";
 
 export const socketAuthMiddleware = async (socket, next) => {
@@ -22,8 +22,18 @@ export const socketAuthMiddleware = async (socket, next) => {
       return next(new Error("Unauthorized - Invalid Token"));
     }
 
-    // find the user fromdb
-    const user = await User.findById(decoded.userId).select("-password");
+    // find the user from db
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        profilePic: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
     if (!user) {
       console.log("Socket connection rejected: User not found");
       return next(new Error("User not found"));
@@ -31,9 +41,9 @@ export const socketAuthMiddleware = async (socket, next) => {
 
     // attach user info to socket
     socket.user = user;
-    socket.userId = user._id.toString();
+    socket.userId = user.id.toString();
 
-    console.log(`Socket authenticated for user: ${user.fullName} (${user._id})`);
+    console.log(`Socket authenticated for user: ${user.fullName} (${user.id})`);
 
     next();
   } catch (error) {

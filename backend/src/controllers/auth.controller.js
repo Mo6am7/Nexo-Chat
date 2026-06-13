@@ -1,9 +1,9 @@
 import { sendWelcomeEmail } from "../emails/emailHandlers.js";
 import { generateToken } from "../lib/utils.js";
-import User from "../models/User.js";
+import { prisma } from "../lib/db.js";
 import bcrypt from "bcryptjs";
 import { ENV } from "../lib/env.js";
-import cloudinary from "../lib/cloudinary.js";
+
 
 export const signup = async (req, res) => {
   const { fullName, email, password } = req.body;
@@ -23,34 +23,29 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "Invalid email format" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await prisma.user.findUnique({ where: { email } });
     if (user) return res.status(400).json({ message: "Email already exists" });
 
     // 123456 => $dnjasdkasj_?dmsakmk
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({
-      fullName,
-      email,
-      password: hashedPassword,
+    const savedUser = await prisma.user.create({
+      data: {
+        fullName,
+        email,
+        password: hashedPassword,
+      }
     });
 
-    if (newUser) {
-      // before CR:
-      // generateToken(newUser._id, res);
-      // await newUser.save();
-
-      // after CR:
-      // Persist user first, then issue auth cookie
-      const savedUser = await newUser.save();
-      generateToken(savedUser._id, res);
+    if (savedUser) {
+      generateToken(savedUser.id, res);
 
       res.status(201).json({
-        _id: newUser._id,
-        fullName: newUser.fullName,
-        email: newUser.email,
-        profilePic: newUser.profilePic,
+        _id: savedUser.id,
+        fullName: savedUser.fullName,
+        email: savedUser.email,
+        profilePic: savedUser.profilePic,
       });
 
       try {
@@ -75,17 +70,17 @@ export const login = async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ email });
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
     // never tell the client which one is incorrect: password or email
 
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) return res.status(400).json({ message: "Invalid credentials" });
 
-    generateToken(user._id, res);
+    generateToken(user.id, res);
 
     res.status(200).json({
-      _id: user._id,
+      _id: user.id,
       fullName: user.fullName,
       email: user.email,
       profilePic: user.profilePic,
@@ -106,15 +101,12 @@ export const updateProfile = async (req, res) => {
     const { profilePic } = req.body;
     if (!profilePic) return res.status(400).json({ message: "Profile pic is required" });
 
-    const userId = req.user._id;
+    const userId = req.user.id;
 
-    const uploadResponse = await cloudinary.uploader.upload(profilePic);
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { profilePic: uploadResponse.secure_url },
-      { new: true }
-    );
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { profilePic: profilePic }
+    });
 
     res.status(200).json(updatedUser);
   } catch (error) {
