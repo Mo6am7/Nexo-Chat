@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bubbleGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6C8EBF"/>
+      <stop offset="100%" stop-color="#4A6FA5"/>
+    </linearGradient>
+  </defs>
+  <!-- Chat bubble -->
+  <path d="M32 6C16.536 6 4 16.745 4 30c0 7.245 3.88 13.74 10 18.18V56l9.6-5.76C26.4 51.36 29.12 52 32 52c15.464 0 28-10.745 28-24S47.464 6 32 6Z"
+        fill="none" stroke="url(#bubbleGrad)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
